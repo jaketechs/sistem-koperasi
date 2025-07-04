@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester - Koperasi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 API Tester - Koperasi</h1>
+        
+        <div class="test-section">
+            <h3>🌐 Server Configuration</h3>
+            <label>Base URL:</label>
+            <input type="text" id="baseUrl" value="http://localhost:3000/api">
+            <button onclick="testConnection()">Test Connection</button>
+            <div id="connectionResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Endpoint Testing</h3>
+            <button onclick="testBasicServer()">Test Basic Server</button>
+            <button onclick="testEndpoint('health', 'http://localhost:3000')">Test Health</button>
+            <button onclick="testEndpoint('anggota')">Test Anggota ✅</button>
+            <button onclick="testEndpoint('neraca-harian')">Test Neraca Harian</button>
+            <button onclick="testEndpoint('transaksi-kas')">Test Transaksi Kas</button>
+            <button onclick="testEndpoint('riwayat-simpanan')">Test Riwayat Simpanan</button>
+            <button onclick="discoverEndpoints()">🔍 Discover All Endpoints</button>
+            <button onclick="testAllEndpoints()">Test All</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Results</h3>
+            <textarea id="results" readonly></textarea>
+            <button onclick="clearResults()">Clear</button>
+        </div>
+
+        <div class="test-section">
+            <h3>⚙️ Quick Fixes</h3>
+            <button onclick="tryAlternativeUrls()">Try Alternative URLs</button>
+            <button onclick="generateConfig()">Generate Config</button>
+        </div>
+
+        <div class="test-section">
+            <h3>✏️ Edit Data Testing</h3>
+            <p>Test PUT endpoints untuk update data:</p>
+            <button onclick="testEditEndpoints()">Test Edit Endpoints</button>
+            <button onclick="testPutAnggota()">Test PUT Anggota</button>
+            <button onclick="testPutNeraca()">Test PUT Neraca</button>
+            <button onclick="testPutKas()">Test PUT Kas</button>
+        </div>
+    </div>
+
+    <script>
+        let results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue';
+            results.value += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function clearResults() {
+            results.value = '';
+        }
+        
+        async function testBasicServer() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const serverUrl = baseUrl.replace('/api', '').replace('/koperasi', '').replace('/v1', '');
+            
+            log(`Testing basic server: ${serverUrl}`);
+            
+            try {
+                const response = await fetch(serverUrl);
+                log(`✅ Server response: ${response.status} ${response.statusText}`, 'success');
+                
+                // Try to get response text
+                try {
+                    const text = await response.text();
+                    log(`Server response body: ${text.substring(0, 200)}...`);
+                } catch (e) {
+                    log(`Could not read response body: ${e.message}`);
+                }
+                
+                // Test different common endpoints
+                const commonEndpoints = ['/', '/health', '/status', '/api', '/api/health'];
+                
+                for (const endpoint of commonEndpoints) {
+                    try {
+                        const testUrl = `${serverUrl}${endpoint}`;
+                        const testResponse = await fetch(testUrl);
+                        
+                        if (testResponse.ok) {
+                            log(`✅ Found working endpoint: ${testUrl}`, 'success');
+                            try {
+                                const data = await testResponse.json();
+                                log(`Response: ${JSON.stringify(data, null, 2)}`);
+                            } catch (e) {
+                                log(`Response (not JSON): ${testResponse.status} ${testResponse.statusText}`);
+                            }
+                        } else {
+                            log(`❌ ${testUrl} failed: ${testResponse.status}`);
+                        }
+                    } catch (error) {
+                        log(`❌ ${serverUrl}${endpoint} error: ${error.message}`);
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Server connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testConnection() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const resultDiv = document.getElementById('connectionResult');
+            
+            log(`Testing connection to: ${baseUrl}`);
+            
+            try {
+                const response = await fetch(`${baseUrl}/health`);
+                if (response.ok) {
+                    resultDiv.innerHTML = '<span class="success">✅ Connected</span>';
+                    log('✅ Connection successful', 'success');
+                } else {
+                    resultDiv.innerHTML = '<span class="error">❌ Connection failed</span>';
+                    log(`❌ Connection failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">❌ Connection error</span>';
+                log(`❌ Connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testEndpoint(endpoint, customBaseUrl = null) {
+            const baseUrl = customBaseUrl || document.getElementById('baseUrl').value;
+            const url = `${baseUrl}/${endpoint}`;
+            
+            log(`Testing endpoint: ${url}`);
+            
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ ${endpoint} endpoint working`, 'success');
+                    log(`Response: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ ${endpoint} endpoint failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ ${endpoint} endpoint error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function discoverEndpoints() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            
+            log('=== 🔍 Discovering Available Endpoints (Based on API Documentation) ===');
+            
+            // Endpoints from API documentation
+            const documentedEndpoints = [
+                // System endpoints (without /api prefix)
+                { endpoint: 'health', baseUrl: 'http://localhost:3000' },
+                { endpoint: 'db-test', baseUrl: 'http://localhost:3000' },
+                { endpoint: 'list-tables', baseUrl: 'http://localhost:3000' },
+                { endpoint: 'check-tables', baseUrl: 'http://localhost:3000' },
+                
+                // API endpoints (with /api prefix)
+                { endpoint: 'anggota', baseUrl: baseUrl },
+                { endpoint: 'anggota/active', baseUrl: baseUrl },
+                { endpoint: 'anggota/stats', baseUrl: baseUrl },
+                { endpoint: 'transaksi-kas', baseUrl: baseUrl },
+                { endpoint: 'neraca-harian', baseUrl: baseUrl },
+                { endpoint: 'riwayat-simpanan', baseUrl: baseUrl },
+                { endpoint: 'riwayat-simpanan/report/anggota', baseUrl: baseUrl }
+            ];
+            
+            const workingEndpoints = [];
+            
+            for (const { endpoint, baseUrl: testBaseUrl } of documentedEndpoints) {
+                try {
+                    const url = `${testBaseUrl}/${endpoint}`;
+                    const response = await fetch(url);
+                    
+                    if (response.ok) {
+                        workingEndpoints.push(`${testBaseUrl}/${endpoint}`);
+                        log(`✅ Found working endpoint: ${url}`, 'success');
+                        
+                        try {
+                            const data = await response.json();
+                            const preview = JSON.stringify(data, null, 2).substring(0, 300);
+                            log(`📊 ${endpoint} response: ${preview}${preview.length >= 300 ? '...' : ''}`);
+                        } catch (e) {
+                            log(`📊 ${endpoint} response: ${response.status} ${response.statusText}`);
+                        }
+                    } else {
+                        log(`❌ ${url} - Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    log(`❌ ${endpoint} - Error: ${error.message}`);
+                }
+            }
+            
+            log('=== 📋 Summary of Working Endpoints ===');
+            if (workingEndpoints.length > 0) {
+                log(`Found ${workingEndpoints.length} working endpoints:`, 'success');
+                workingEndpoints.forEach(endpoint => {
+                    log(`  ✅ ${endpoint}`, 'success');
+                });
+            } else {
+                log('No working endpoints found', 'error');
+            }
+            
+            log('=== Discovery Complete ===');
+        }
+        
+        async function testAllEndpoints() {
+            const endpoints = [
+                { name: 'health', url: 'http://localhost:3000/health' },
+                { name: 'anggota', url: 'http://localhost:3000/api/anggota' },
+                { name: 'neraca-harian', url: 'http://localhost:3000/api/neraca-harian' },
+                { name: 'transaksi-kas', url: 'http://localhost:3000/api/transaksi-kas' },
+                { name: 'riwayat-simpanan', url: 'http://localhost:3000/api/riwayat-simpanan' }
+            ];
+            
+            log('=== Testing All Key Endpoints ===');
+            
+            for (const { name, url } of endpoints) {
+                log(`Testing ${name}: ${url}`);
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ ${name} working`, 'success');
+                    } else {
+                        log(`❌ ${name} failed: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ ${name} error: ${error.message}`, 'error');
+                }
+            }
+            
+            log('=== Test Complete ===');
+        }
+        
+        async function tryAlternativeUrls() {
+            const alternatives = [
+                'http://localhost:3000',
+                'http://localhost:3000/api',
+                'http://localhost:3000/koperasi',
+                'http://localhost:3000/v1',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:3000/api'
+            ];
+            
+            log('=== Testing Alternative URLs ===');
+            
+            for (const url of alternatives) {
+                log(`Testing: ${url}`);
+                
+                // Test multiple endpoints for each URL
+                const testEndpoints = ['health', 'neraca', 'kas', 'anggota', '', 'status'];
+                let foundWorking = false;
+                
+                for (const endpoint of testEndpoints) {
+                    try {
+                        const testUrl = endpoint ? `${url}/${endpoint}` : url;
+                        const response = await fetch(testUrl);
+                        
+                        if (response.ok) {
+                            log(`✅ Working URL found: ${testUrl}`, 'success');
+                            
+                            // Try to get response data
+                            try {
+                                const data = await response.json();
+                                log(`Response data: ${JSON.stringify(data, null, 2)}`);
+                            } catch (e) {
+                                log(`Response (not JSON): ${response.status} ${response.statusText}`);
+                            }
+                            
+                            // Set the base URL (remove endpoint from URL)
+                            document.getElementById('baseUrl').value = url;
+                            foundWorking = true;
+                            break;
+                        } else {
+                            log(`❌ ${testUrl} failed: ${response.status}`);
+                        }
+                    } catch (error) {
+                        log(`❌ ${testUrl} error: ${error.message}`);
+                    }
+                }
+                
+                if (foundWorking) {
+                    log(`🎯 Best base URL: ${url}`, 'success');
+                    break;
+                }
+            }
+            
+            log('=== Alternative URL test complete ===');
+        }
+        
+        function generateConfig() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const config = `
+// Update your config.js with this URL:
+const CONFIG = {
+    API_BASE_URL: '${baseUrl}',
+    // ... rest of your config
+};
+            `;
+            
+            log('=== Generated Config ===');
+            log(config);
+            log('Copy this to your assets/js/config.js file');
+        }
+        
+        async function testEditEndpoints() {
+            log('=== 🔧 Testing Edit/Update Endpoints ===');
+            
+            const baseUrl = document.getElementById('baseUrl').value;
+            
+            // Test endpoints that should support PUT method
+            const editEndpoints = [
+                { name: 'anggota', endpoint: 'anggota/1', method: 'PUT' },
+                { name: 'neraca', endpoint: 'neraca-harian/1', method: 'PUT' },
+                { name: 'kas', endpoint: 'transaksi-kas/1', method: 'PUT' }
+            ];
+            
+            for (const { name, endpoint, method } of editEndpoints) {
+                log(`Testing ${method} ${name}: ${baseUrl}/${endpoint}`);
+                
+                try {
+                    const response = await fetch(`${baseUrl}/${endpoint}`, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            test: 'data',
+                            updated_at: new Date().toISOString()
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        log(`✅ ${method} ${name} endpoint accessible (${response.status})`, 'success');
+                        try {
+                            const data = await response.json();
+                            log(`Response: ${JSON.stringify(data, null, 2)}`);
+                        } catch (e) {
+                            log(`Response: ${response.status} ${response.statusText}`);
+                        }
+                    } else if (response.status === 404) {
+                        log(`⚠️ ${method} ${name} endpoint not found (404) - ID might not exist`, 'info');
+                    } else if (response.status === 405) {
+                        log(`❌ ${method} ${name} method not allowed (405)`, 'error');
+                    } else {
+                        log(`❌ ${method} ${name} failed: ${response.status} ${response.statusText}`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ ${method} ${name} error: ${error.message}`, 'error');
+                }
+            }
+            
+            log('=== Edit Endpoints Test Complete ===');
+        }
+        
+        async function testPutAnggota() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            
+            log('Testing PUT anggota with sample data...');
+            
+            // Sample data for testing
+            const sampleData = {
+                nama: 'Test Update Anggota',
+                alamat: 'Alamat Update Test',
+                telepon: '081234567890',
+                status: 'Aktif'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/anggota/1`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sampleData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ PUT anggota successful', 'success');
+                    log(`Response: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ PUT anggota failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ PUT anggota error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPutNeraca() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            
+            log('Testing PUT neraca with sample data...');
+            
+            // Sample data for testing
+            const sampleData = {
+                tanggal: '2024-01-01',
+                kas_masuk: 1000000,
+                piutang_pokok: 500000,
+                piutang_jasa: 50000,
+                danais_pokok: 800000,
+                danais_jasa: 80000,
+                simpanan_pokok: 300000,
+                simpanan_wajib: 200000,
+                simpanan_sukarela: 150000,
+                keterangan_lain: 'Update test'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/neraca-harian/1`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sampleData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ PUT neraca successful', 'success');
+                    log(`Response: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ PUT neraca failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ PUT neraca error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPutKas() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            
+            log('Testing PUT kas with sample data...');
+            
+            // Sample data for testing
+            const sampleData = {
+                tanggal: '2024-01-01',
+                jenis: 'Masuk',
+                jumlah: 100000,
+                keterangan: 'Test update kas'
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/transaksi-kas/1`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sampleData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ PUT kas successful', 'success');
+                    log(`Response: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ PUT kas failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ PUT kas error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            log('🔧 API Tester initialized');
+            log('Click "Test Connection" to check your backend');
+        };
+    </script>
+</body>
+</html>

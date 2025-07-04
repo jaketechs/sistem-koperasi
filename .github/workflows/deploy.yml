@@ -1,0 +1,109 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+          
+    - name: Install dependencies
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        elif [ -f package.json ]; then
+          npm install
+        else
+          echo "No package.json found, skipping npm install"
+        fi
+        
+    - name: Run tests
+      run: |
+        echo "Running basic file validation tests..."
+        # Check if main files exist
+        test -f main.html || (echo "main.html not found" && exit 1)
+        test -f assets/js/app.js || (echo "app.js not found" && exit 1)
+        test -f assets/js/api.js || (echo "api.js not found" && exit 1)
+        test -f assets/js/config.js || (echo "config.js not found" && exit 1)
+        test -f assets/css/style.css || (echo "style.css not found" && exit 1)
+        echo "All required files found!"
+        
+    - name: Validate HTML
+      run: |
+        # Install HTML validator
+        npm install -g html-validate
+        # Validate main HTML file
+        html-validate main.html || echo "HTML validation warnings (non-blocking)"
+        
+    - name: Validate JavaScript
+      run: |
+        # Install JSHint for JavaScript validation
+        npm install -g jshint
+        # Validate JavaScript files
+        jshint assets/js/*.js || echo "JavaScript validation warnings (non-blocking)"
+        
+    - name: Build and Deploy
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        exclude_assets: |
+          .github
+          node_modules
+          *.md
+          !README_GITHUB.md
+          demo-data.js
+          csv-test.html
+          api-tester.html
+          .gitignore
+        destination_dir: .
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          ## Changes in this Release
+          - Auto-generated release from GitHub Actions
+          - See [CHANGELOG.md](./CHANGELOG.md) for detailed changes
+          
+          ## Files
+          - `main.html` - Main application
+          - `assets/` - CSS, JavaScript, and other assets
+          - `docs/` - Documentation files
+          
+          ## Setup
+          1. Download and extract the release
+          2. Serve files using a local server
+          3. Access via browser at localhost:PORT
+          
+          ## Live Demo
+          🔗 [View Live Demo](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }})
+        draft: false
+        prerelease: false

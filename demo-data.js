@@ -16,7 +16,9 @@ const demoData = {
       simpananSukarela: 800000,
       keteranganLain: "Pendapatan jasa administrasi",
       jumlahLain: 100000,
-      total: 10550000
+      total: 10550000,
+      anggotaId: 1719504300000,
+      namaAnggota: "Budi Santoso"
     },
     {
       id: 1719590400000,
@@ -31,7 +33,9 @@ const demoData = {
       simpananSukarela: 600000,
       keteranganLain: "Denda keterlambatan",
       jumlahLain: 50000,
-      total: 8100000
+      total: 8100000,
+      anggotaId: 1719504400000,
+      namaAnggota: "Siti Aminah"
     },
     {
       id: 1719676800000,
@@ -46,7 +50,9 @@ const demoData = {
       simpananSukarela: 900000,
       keteranganLain: "",
       jumlahLain: 0,
-      total: 10230000
+      total: 10230000,
+      anggotaId: 1719504500000,
+      namaAnggota: "Ahmad Hidayat"
     }
   ],
   
@@ -56,117 +62,161 @@ const demoData = {
       tanggal: "2025-07-01",
       jenis: "masuk",
       jumlah: 5000000,
-      keterangan: "Setoran kas awal bulan"
+      keterangan: "Setoran kas awal bulan",
+      anggotaId: 1719504300000,
+      namaAnggota: "Budi Santoso"
     },
     {
       id: 1719504200000,
       tanggal: "2025-07-01", 
       jenis: "keluar",
       jumlah: 500000,
-      keterangan: "Biaya operasional kantor"
+      keterangan: "Biaya operasional kantor",
+      anggotaId: null,
+      namaAnggota: ""
     },
     {
       id: 1719590500000,
       tanggal: "2025-07-02",
       jenis: "masuk",
       jumlah: 3500000,
-      keterangan: "Penerimaan angsuran anggota"
+      keterangan: "Penerimaan angsuran anggota",
+      anggotaId: 1719504400000,
+      namaAnggota: "Siti Aminah"
     },
     {
       id: 1719590600000,
       tanggal: "2025-07-02",
       jenis: "keluar", 
       jumlah: 200000,
-      keterangan: "Biaya listrik dan air"
+      keterangan: "Biaya listrik dan air",
+      anggotaId: null,
+      namaAnggota: ""
     },
     {
       id: 1719676900000,
       tanggal: "2025-07-03",
       jenis: "masuk",
       jumlah: 4200000,
-      keterangan: "Setoran simpanan anggota"
+      keterangan: "Setoran simpanan anggota",
+      anggotaId: 1719504500000,
+      namaAnggota: "Ahmad Hidayat"
     },
     {
       id: 1719677000000,
       tanggal: "2025-07-03",
       jenis: "keluar",
       jumlah: 300000,
-      keterangan: "Gaji karyawan harian"
+      keterangan: "Gaji karyawan harian",
+      anggotaId: null,
+      namaAnggota: ""
     }
   ],
   
   anggota: [
     {
       id: 1719504300000,
+      anggotaId: 1719504300000, // Konsistensi dengan field lain
       noAnggota: "KPP2025001",
       nama: "Budi Santoso",
       telepon: "08123456789",
       tanggalBergabung: "2025-01-15",
       alamat: "Jl. Pasar Raya No. 12, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0 // Will be calculated
     },
     {
       id: 1719504400000,
+      anggotaId: 1719504400000,
       noAnggota: "KPP2025002", 
       nama: "Siti Aminah",
       telepon: "08234567890",
       tanggalBergabung: "2025-02-01",
       alamat: "Jl. Mawar No. 5, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719504500000,
+      anggotaId: 1719504500000,
       noAnggota: "KPP2025003",
       nama: "Ahmad Hidayat", 
       telepon: "08345678901",
       tanggalBergabung: "2025-02-15",
       alamat: "Jl. Melati No. 8, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719504600000,
+      anggotaId: 1719504600000,
       noAnggota: "KPP2025004",
       nama: "Rina Marlina",
       telepon: "08456789012",
       tanggalBergabung: "2025-03-01", 
       alamat: "Jl. Dahlia No. 3, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719504700000,
+      anggotaId: 1719504700000,
       noAnggota: "KPP2025005",
       nama: "Joko Widodo",
       telepon: "08567890123",
       tanggalBergabung: "2025-03-15",
       alamat: "Jl. Anggrek No. 15, Padang Pangan", 
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719504800000,
+      anggotaId: 1719504800000,
       noAnggota: "KPP2025006",
       nama: "Sri Mulyani",
       telepon: "08678901234",
       tanggalBergabung: "2025-04-01",
       alamat: "Jl. Kenanga No. 7, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719504900000,
+      anggotaId: 1719504900000,
       noAnggota: "KPP2025007",
       nama: "Bambang Sutrisno",
       telepon: "08789012345", 
       tanggalBergabung: "2025-04-15",
       alamat: "Jl. Cempaka No. 9, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     },
     {
       id: 1719505000000,
+      anggotaId: 1719505000000,
       noAnggota: "KPP2025008",
       nama: "Dewi Sartika",
       telepon: "08890123456",
       tanggalBergabung: "2025-05-01",
       alamat: "Jl. Seroja No. 11, Padang Pangan",
-      status: "Aktif"
+      status: "Aktif",
+      simpananPokok: 100000,
+      simpananWajib: 50000,
+      totalKontribusi: 0
     }
   ]
 };

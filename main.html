@@ -84,7 +84,18 @@
                 <div id="dashboard" class="section active">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
-                        <span class="badge bg-info fs-6" id="currentDate"></span>
+                        <div>
+                            <span id="navConnectionStatus" class="badge bg-secondary me-2">
+                                <i class="fas fa-circle"></i> Checking...
+                            </span>
+                            <button class="btn btn-outline-primary btn-sm me-2" onclick="app.testConnection()" title="Test Koneksi Backend">
+                                <i class="fas fa-wifi"></i> Test Koneksi
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="app.loadAllData()" title="Reload Data">
+                                <i class="fas fa-sync-alt"></i> Reload Data
+                            </button>
+                            <span class="badge bg-info fs-6" id="currentDate"></span>
+                        </div>
                     </div>
                     
                     <!-- Summary Cards -->
@@ -155,13 +166,14 @@
                                         <tr>
                                             <th>Tanggal</th>
                                             <th>Jenis</th>
+                                            <th>Anggota</th>
                                             <th>Keterangan</th>
                                             <th>Jumlah</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recentTransactions">
                                         <tr>
-                                            <td colspan="4" class="text-center">Belum ada transaksi</td>
+                                            <td colspan="5" class="text-center">Belum ada transaksi</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -190,6 +202,12 @@
                                     <div class="col-md-6">
                                         <label class="form-label">Tanggal</label>
                                         <input type="date" class="form-control" id="tanggalNeraca" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Anggota (Opsional)</label>
+                                        <select class="form-control" id="anggotaNeraca">
+                                            <option value="">Pilih Anggota (Opsional)</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -312,6 +330,7 @@
                                     <thead>
                                         <tr>
                                             <th>Tanggal</th>
+                                            <th>Anggota</th>
                                             <th>Kas</th>
                                             <th>Piutang</th>
                                             <th>Piutang Danais</th>
@@ -323,7 +342,7 @@
                                     </thead>
                                     <tbody id="neracaTableBody">
                                         <tr>
-                                            <td colspan="8" class="text-center">Belum ada data neraca</td>
+                                            <td colspan="9" class="text-center">Belum ada data neraca</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -349,11 +368,11 @@
                         <div class="card-body">
                             <form id="kasFormElement">
                                 <div class="row mb-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label">Tanggal</label>
                                         <input type="date" class="form-control" id="tanggalKas" required>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label">Jenis Transaksi</label>
                                         <select class="form-control" id="jenisKas" required>
                                             <option value="">Pilih Jenis</option>
@@ -361,7 +380,13 @@
                                             <option value="keluar">Pengeluaran</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Anggota</label>
+                                        <select class="form-control" id="anggotaKas">
+                                            <option value="">Pilih Anggota (Opsional)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
                                         <label class="form-label">Jumlah</label>
                                         <input type="number" class="form-control" id="jumlahKas" required>
                                     </div>
@@ -423,6 +448,7 @@
                                         <tr>
                                             <th>Tanggal</th>
                                             <th>Jenis</th>
+                                            <th>Anggota</th>
                                             <th>Keterangan</th>
                                             <th>Pemasukan</th>
                                             <th>Pengeluaran</th>
@@ -432,7 +458,7 @@
                                     </thead>
                                     <tbody id="kasTableBody">
                                         <tr>
-                                            <td colspan="7" class="text-center">Belum ada transaksi kas</td>
+                                            <td colspan="8" class="text-center">Belum ada transaksi kas</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -467,7 +493,10 @@
                                 <option value="2023">2023</option>
                             </select>
                             <button class="btn btn-primary" onclick="app.generateLaporan()">
-                                <i class="fas fa-search"></i> Generate
+                                <i class="fas fa-search"></i> Generate Bulanan
+                            </button>
+                            <button class="btn btn-info me-2" onclick="app.generateLaporan3Bulan()">
+                                <i class="fas fa-calendar-alt"></i> Rekap 3 Bulan
                             </button>
                             <button class="btn btn-success" onclick="app.exportLaporan()">
                                 <i class="fas fa-download"></i> Export
@@ -555,14 +584,18 @@
                                             <th>No. Anggota</th>
                                             <th>Nama</th>
                                             <th>Telepon</th>
+                                            <th>Alamat</th>
                                             <th>Tanggal Bergabung</th>
+                                            <th>Simpanan Pokok</th>
+                                            <th>Simpanan Wajib</th>
+                                            <th>Total Kontribusi</th>
                                             <th>Status</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody id="anggotaTableBody">
                                         <tr>
-                                            <td colspan="6" class="text-center">Belum ada data anggota</td>
+                                            <td colspan="10" class="text-center">Belum ada data anggota</td>
                                         </tr>
                                     </tbody>
                                 </table>

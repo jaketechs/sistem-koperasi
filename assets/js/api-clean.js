@@ -35,17 +35,7 @@ class ApiService {
             console.log(`📡 Response status: ${response.status} for ${url}`);
             
             if (!response.ok) {
-                // Try to get error details from response body
-                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.message) {
-                        errorMessage += ` - ${errorData.message}`;
-                    }
-                } catch (e) {
-                    // If can't parse error response, use default message
-                }
-                throw new Error(errorMessage);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
@@ -100,39 +90,10 @@ class ApiService {
     // Health check
     async healthCheck() {
         try {
-            console.log('🔍 Health check...');
             const result = await this.get('/health');
-            console.log('✅ Health check result:', result);
-            return result && (result.status === 'OK' || result.success === true);
+            return result.success === true;
         } catch (error) {
             console.log('❌ Health check failed:', error.message);
-            return false;
-        }
-    }
-
-    // Simple connection test
-    async simpleHealthCheck() {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            
-            const response = await fetch(`${this.baseURL}/health`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data && (data.status === 'OK' || data.success === true);
-            }
-            return false;
-        } catch (error) {
-            console.log('❌ Simple health check failed:', error.message);
             return false;
         }
     }
@@ -144,11 +105,11 @@ class ApiService {
             const result = await this.get('/api/neraca-harian');
             console.log(`✅ Neraca SUCCESS:`, result);
             
-            // Return the full response so app.js can access .data property
-            return result;
+            // Extract data array from response
+            return result.data || result || [];
         } catch (error) {
-            console.warn('⚠️ Neraca API failed, returning empty response:', error.message);
-            return { data: [] };
+            console.warn('⚠️ Neraca API failed, returning empty array:', error.message);
+            return [];
         }
     }
 
@@ -159,27 +120,23 @@ class ApiService {
             // Format data sesuai dengan API backend
             const neracaData = {
                 tanggal: data.tanggal,
-                kas_masuk: Number(data.kasMasuk) || 0,
-                piutang_pokok: Number(data.piutangPokok) || 0,
-                piutang_jasa: Number(data.piutangJasa) || 0,
-                danais_pokok: Number(data.danaisPokok) || 0,
-                danais_jasa: Number(data.danaisJasa) || 0,
-                simpanan_pokok: Number(data.simpananPokok) || 0,
-                simpanan_wajib: Number(data.simpananWajib) || 0,
-                simpanan_sukarela: Number(data.simpananSukarela) || 0,
-                keterangan_lain: String(data.keteranganLain || ''),
-                anggota_id: data.anggotaId ? Number(data.anggotaId) : null
+                kas_masuk: data.kasMasuk || 0,
+                piutang_pokok: data.piutangPokok || 0,
+                piutang_jasa: data.piutangJasa || 0,
+                danais_pokok: data.danaisPokok || 0,
+                danais_jasa: data.danaisJasa || 0,
+                simpanan_pokok: data.simpananPokok || 0,
+                simpanan_wajib: data.simpananWajib || 0,
+                simpanan_sukarela: data.simpananSukarela || 0,
+                keterangan_lain: data.keteranganLain || ''
             };
             
-            console.log(`🔄 Posting neraca to: ${this.baseURL}/api/neraca-harian`);
-            console.log(`📋 Formatted data:`, neracaData);
-            
+            console.log(`🔄 Posting neraca to: ${this.baseURL}/api/neraca-harian`, neracaData);
             const result = await this.post('/api/neraca-harian', neracaData);
             console.log(`✅ Neraca CREATE SUCCESS:`, result);
             return result;
         } catch (error) {
             console.error('🚨 Neraca CREATE failed:', error.message);
-            console.error('🚨 Original data:', data);
             throw error;
         }
     }
@@ -215,11 +172,11 @@ class ApiService {
             const result = await this.get('/api/transaksi-kas');
             console.log(`✅ Kas SUCCESS:`, result);
             
-            // Return the full response so app.js can access .data property
-            return result;
+            // Extract data array from response
+            return result.data || result || [];
         } catch (error) {
-            console.warn('⚠️ Kas API failed, returning empty response:', error.message);
-            return { data: [] };
+            console.warn('⚠️ Kas API failed, returning empty array:', error.message);
+            return [];
         }
     }
 
@@ -272,11 +229,11 @@ class ApiService {
             const result = await this.get('/api/anggota');
             console.log(`✅ Anggota SUCCESS:`, result);
             
-            // Return the full response so app.js can access .data property
-            return result;
+            // Extract data array from response
+            return result.data || result || [];
         } catch (error) {
-            console.warn('⚠️ Anggota API failed, returning empty response:', error.message);
-            return { data: [] };
+            console.warn('⚠️ Anggota API failed, returning empty array:', error.message);
+            return [];
         }
     }
 
@@ -335,46 +292,6 @@ class ApiService {
 
     async getDashboardOverview() {
         return this.get('/api/dashboard/overview');
-    }
-
-    // REPORTING API ENDPOINTS
-    async getLaporanBulanan(bulan, tahun) {
-        try {
-            console.log(`🔍 Getting laporan bulanan for bulan ${bulan}, tahun ${tahun}`);
-            const endpoint = `/api/laporan/bulanan?bulan=${bulan}&tahun=${tahun}`;
-            const result = await this.get(endpoint);
-            console.log(`✅ Laporan bulanan SUCCESS:`, result);
-            return result;
-        } catch (error) {
-            console.warn('⚠️ Laporan bulanan API failed:', error.message);
-            throw error;
-        }
-    }
-
-    async getLaporan3Bulan(tahun) {
-        try {
-            console.log(`🔍 Getting laporan triwulan for tahun ${tahun}`);
-            const endpoint = `/api/laporan/triwulan?tahun=${tahun}`;
-            const result = await this.get(endpoint);
-            console.log(`✅ Laporan triwulan SUCCESS:`, result);
-            return result;
-        } catch (error) {
-            console.warn('⚠️ Laporan triwulan API failed:', error.message);
-            throw error;
-        }
-    }
-
-    async getLaporanTahunan(tahun) {
-        try {
-            console.log(`🔍 Getting laporan tahunan for tahun ${tahun}`);
-            const endpoint = `/api/laporan/tahunan?tahun=${tahun}`;
-            const result = await this.get(endpoint);
-            console.log(`✅ Laporan tahunan SUCCESS:`, result);
-            return result;
-        } catch (error) {
-            console.warn('⚠️ Laporan tahunan API failed:', error.message);
-            throw error;
-        }
     }
 
     // Test connection function

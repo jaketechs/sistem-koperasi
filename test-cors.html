@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #output { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test CORS & Connection</h1>
+    
+    <button onclick="testDirect()">Test Direct Fetch</button>
+    <button onclick="testWithAPI()">Test with API Service</button>
+    <button onclick="clearOutput()">Clear</button>
+    
+    <div id="output"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testDirect() {
+            log('🔍 Testing direct fetch to backend...');
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                log(`Status: ${response.status}`);
+                
+                const data = await response.json();
+                log(`✅ Direct fetch SUCCESS: ${JSON.stringify(data, null, 2)}`);
+                
+                // Test anggota endpoint
+                const anggotaResponse = await fetch(`${API_BASE_URL}/api/anggota`);
+                const anggotaData = await anggotaResponse.json();
+                log(`✅ Anggota fetch SUCCESS: Found ${anggotaData.data?.length || 0} records`);
+                
+            } catch (error) {
+                log(`❌ Direct fetch ERROR: ${error.message}`);
+                log(`Error details: ${error.stack}`);
+            }
+        }
+
+        async function testWithAPI() {
+            log('🔍 Testing with API service...');
+            try {
+                // Load config and API scripts inline
+                window.CONFIG = {
+                    API_BASE_URL: 'http://localhost:3000',
+                    REQUEST_TIMEOUT: 10000
+                };
+
+                // Simple API test
+                const response = await fetch('http://localhost:3000/api/anggota', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`✅ API Service SUCCESS: ${JSON.stringify(data, null, 2)}`);
+                
+            } catch (error) {
+                log(`❌ API Service ERROR: ${error.message}`);
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+
+        // Auto test on load
+        window.addEventListener('load', () => {
+            log('🚀 CORS Test page loaded');
+            testDirect();
+        });
+    </script>
+</body>
+</html>

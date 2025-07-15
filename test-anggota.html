@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fitur Anggota - Koperasi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Test Fitur Anggota</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Load Demo Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <button onclick="loadDemoData()" class="btn btn-primary">Load Demo Data</button>
+                        <p class="mt-2">Klik untuk memuat data demo yang sudah include anggota</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Open Main App</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="main.html" target="_blank" class="btn btn-success">Buka Aplikasi Utama</a>
+                        <p class="mt-2">Buka aplikasi utama untuk test fitur anggota</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Checklist Test</h5>
+            </div>
+            <div class="card-body">
+                <h6>Dashboard:</h6>
+                <ul>
+                    <li>✅ Kolom "Transaksi Terbaru" menampilkan: Tanggal, Jenis, Anggota, Keterangan, Jumlah</li>
+                    <li>✅ Nama anggota muncul di kolom "Anggota"</li>
+                </ul>
+
+                <h6>Form Kas:</h6>
+                <ul>
+                    <li>✅ Ada dropdown "Anggota" yang bisa dipilih</li>
+                    <li>✅ Dropdown berisi format: "[No. Anggota] - [Nama]"</li>
+                </ul>
+
+                <h6>Tabel Kas:</h6>
+                <ul>
+                    <li>✅ Kolom "Anggota" menampilkan nama anggota</li>
+                    <li>✅ Urutan kolom: Tanggal, Jenis, Anggota, Keterangan, Pemasukan, Pengeluaran, Saldo, Aksi</li>
+                </ul>
+
+                <h6>Form Neraca:</h6>
+                <ul>
+                    <li>✅ Ada dropdown "Anggota" yang bisa dipilih</li>
+                </ul>
+
+                <h6>Tabel Neraca:</h6>
+                <ul>
+                    <li>✅ Kolom "Anggota" setelah kolom Tanggal</li>
+                </ul>
+
+                <h6>Tabel Anggota:</h6>
+                <ul>
+                    <li>✅ Kolom "Total Kontribusi" menampilkan nilai dalam rupiah</li>
+                    <li>✅ Nilai dihitung dari kas dan neraca</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Data Test</h5>
+            </div>
+            <div class="card-body">
+                <p>Demo data yang akan dimuat:</p>
+                <ul>
+                    <li><strong>Budi Santoso (KPP2025001)</strong> - Kontribusi dari kas dan neraca</li>
+                    <li><strong>Siti Aminah (KPP2025002)</strong> - Kontribusi dari kas dan neraca</li>
+                    <li><strong>Ahmad Hidayat (KPP2025003)</strong> - Kontribusi dari kas dan neraca</li>
+                    <li>Anggota lain tanpa kontribusi (untuk test)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="demo-data.js"></script>
+    <script>
+        console.log('Test page loaded');
+        console.log('Demo data available:', typeof demoData !== 'undefined');
+    </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug API - Koperasi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .debug-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error-output {
+            background-color: #f8d7da;
+            border-color: #f5c2c7;
+            color: #842029;
+        }
+        .success-output {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+            color: #0f5132;
+        }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Debug API Koperasi</h1>
+        
+        <!-- Test Connection -->
+        <div class="test-section">
+            <h3>1. Test Koneksi API</h3>
+            <button class="btn btn-primary" onclick="testConnection()">Test Koneksi</button>
+            <div id="connectionResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Test Get All Neraca -->
+        <div class="test-section">
+            <h3>2. Test Get All Neraca</h3>
+            <button class="btn btn-info" onclick="testGetNeraca()">Get All Neraca</button>
+            <div id="getNeracaResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Test Create Neraca (Minimal Data) -->
+        <div class="test-section">
+            <h3>3. Test Create Neraca (Data Minimal)</h3>
+            <p>Test dengan data minimal yang seharusnya diterima backend</p>
+            <button class="btn btn-success" onclick="testCreateNeracaMinimal()">Create Neraca Minimal</button>
+            <div id="createNeracaMinimalResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Test Create Neraca (Full Data) -->
+        <div class="test-section">
+            <h3>4. Test Create Neraca (Data Lengkap)</h3>
+            <p>Test dengan semua field yang tersedia</p>
+            <button class="btn btn-warning" onclick="testCreateNeracaFull()">Create Neraca Lengkap</button>
+            <div id="createNeracaFullResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Test Get Anggota -->
+        <div class="test-section">
+            <h3>5. Test Get All Anggota</h3>
+            <button class="btn btn-info" onclick="testGetAnggota()">Get All Anggota</button>
+            <div id="getAnggotaResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Manual Test Form -->
+        <div class="test-section">
+            <h3>6. Manual Test Form</h3>
+            <form id="manualTestForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="testTanggal" class="form-label">Tanggal</label>
+                            <input type="date" class="form-control" id="testTanggal" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testKasMasuk" class="form-label">Kas Masuk</label>
+                            <input type="number" class="form-control" id="testKasMasuk" value="100000">
+                        </div>
+                        <div class="mb-3">
+                            <label for="testKeterangan" class="form-label">Keterangan</label>
+                            <input type="text" class="form-control" id="testKeterangan" value="Test neraca manual">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="testSimpananPokok" class="form-label">Simpanan Pokok</label>
+                            <input type="number" class="form-control" id="testSimpananPokok" value="50000">
+                        </div>
+                        <div class="mb-3">
+                            <label for="testSimpananWajib" class="form-label">Simpanan Wajib</label>
+                            <input type="number" class="form-control" id="testSimpananWajib" value="25000">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="testManualForm()">Test Manual</button>
+            </form>
+            <div id="manualTestResult" class="debug-output" style="display: none;"></div>
+        </div>
+
+        <!-- Raw Request Test -->
+        <div class="test-section">
+            <h3>7. Raw Request Test</h3>
+            <p>Test dengan raw fetch request untuk melihat response mentah</p>
+            <button class="btn btn-secondary" onclick="testRawRequest()">Test Raw Request</button>
+            <div id="rawRequestResult" class="debug-output" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Initialize API service
+        const apiService = new ApiService();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('testTanggal').value = today;
+
+        function showResult(elementId, content, isError = false, isSuccess = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `debug-output ${isError ? 'error-output' : isSuccess ? 'success-output' : ''}`;
+            element.textContent = content;
+        }
+
+        async function testConnection() {
+            try {
+                showResult('connectionResult', 'Testing connection...');
+                
+                const startTime = Date.now();
+                const response = await fetch(CONFIG.API_BASE_URL + '/anggota', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                const endTime = Date.now();
+                
+                const responseData = await response.text();
+                
+                const result = `
+Connection Test Results:
+========================
+URL: ${CONFIG.API_BASE_URL}/anggota
+Status: ${response.status} ${response.statusText}
+Response Time: ${endTime - startTime}ms
+Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}
+
+Response Body:
+${responseData}
+                `;
+                
+                showResult('connectionResult', result, !response.ok, response.ok);
+                
+            } catch (error) {
+                showResult('connectionResult', `Connection Error: ${error.message}`, true);
+            }
+        }
+
+        async function testGetNeraca() {
+            try {
+                showResult('getNeracaResult', 'Getting all neraca...');
+                
+                const result = await apiService.getAllNeraca();
+                
+                const output = `
+Get Neraca Results:
+==================
+Success: true
+Data: ${JSON.stringify(result, null, 2)}
+                `;
+                
+                showResult('getNeracaResult', output, false, true);
+                
+            } catch (error) {
+                showResult('getNeracaResult', `Get Neraca Error: ${error.message}`, true);
+            }
+        }
+
+        async function testGetAnggota() {
+            try {
+                showResult('getAnggotaResult', 'Getting all anggota...');
+                
+                const result = await apiService.getAllAnggota();
+                
+                const output = `
+Get Anggota Results:
+===================
+Success: true
+Data: ${JSON.stringify(result, null, 2)}
+                `;
+                
+                showResult('getAnggotaResult', output, false, true);
+                
+            } catch (error) {
+                showResult('getAnggotaResult', `Get Anggota Error: ${error.message}`, true);
+            }
+        }
+
+        async function testCreateNeracaMinimal() {
+            try {
+                showResult('createNeracaMinimalResult', 'Creating neraca with minimal data...');
+                
+                const data = {
+                    tanggal: today,
+                    kasMasuk: 50000,
+                    keteranganLain: 'Test minimal data'
+                };
+                
+                console.log('Sending minimal data:', data);
+                
+                const result = await apiService.createNeraca(data);
+                
+                const output = `
+Create Neraca Minimal Results:
+==============================
+Input Data: ${JSON.stringify(data, null, 2)}
+Success: true
+Response: ${JSON.stringify(result, null, 2)}
+                `;
+                
+                showResult('createNeracaMinimalResult', output, false, true);
+                
+            } catch (error) {
+                const output = `
+Create Neraca Minimal Error:
+============================
+Error: ${error.message}
+Stack: ${error.stack}
+
+Check browser console for more detailed error information.
+                `;
+                showResult('createNeracaMinimalResult', output, true);
+            }
+        }
+
+        async function testCreateNeracaFull() {
+            try {
+                showResult('createNeracaFullResult', 'Creating neraca with full data...');
+                
+                const data = {
+                    tanggal: today,
+                    kasMasuk: 100000,
+                    piutangPokok: 50000,
+                    piutangJasa: 5000,
+                    danaisPokok: 75000,
+                    danaisJasa: 7500,
+                    simpananPokok: 100000,
+                    simpananWajib: 50000,
+                    simpananSukarela: 25000,
+                    keteranganLain: 'Test full data neraca'
+                };
+                
+                console.log('Sending full data:', data);
+                
+                const result = await apiService.createNeraca(data);
+                
+                const output = `
+Create Neraca Full Results:
+===========================
+Input Data: ${JSON.stringify(data, null, 2)}
+Success: true
+Response: ${JSON.stringify(result, null, 2)}
+                `;
+                
+                showResult('createNeracaFullResult', output, false, true);
+                
+            } catch (error) {
+                const output = `
+Create Neraca Full Error:
+=========================
+Error: ${error.message}
+Stack: ${error.stack}
+
+Check browser console for detailed error logs from all attempted formats.
+                `;
+                showResult('createNeracaFullResult', output, true);
+            }
+        }
+
+        async function testManualForm() {
+            try {
+                showResult('manualTestResult', 'Testing manual form data...');
+                
+                const data = {
+                    tanggal: document.getElementById('testTanggal').value,
+                    kasMasuk: parseFloat(document.getElementById('testKasMasuk').value) || 0,
+                    simpananPokok: parseFloat(document.getElementById('testSimpananPokok').value) || 0,
+                    simpananWajib: parseFloat(document.getElementById('testSimpananWajib').value) || 0,
+                    keteranganLain: document.getElementById('testKeterangan').value || ''
+                };
+                
+                console.log('Sending manual form data:', data);
+                
+                const result = await apiService.createNeraca(data);
+                
+                const output = `
+Manual Form Test Results:
+=========================
+Input Data: ${JSON.stringify(data, null, 2)}
+Success: true
+Response: ${JSON.stringify(result, null, 2)}
+                `;
+                
+                showResult('manualTestResult', output, false, true);
+                
+            } catch (error) {
+                const output = `
+Manual Form Test Error:
+=======================
+Error: ${error.message}
+Stack: ${error.stack}
+
+Check browser console for detailed debug information.
+                `;
+                showResult('manualTestResult', output, true);
+            }
+        }
+
+        async function testRawRequest() {
+            try {
+                showResult('rawRequestResult', 'Testing raw fetch request...');
+                
+                const testData = {
+                    tanggal: today,
+                    kas_masuk: 100000,
+                    simpanan_pokok: 50000,
+                    keterangan_lain: 'Raw request test'
+                };
+                
+                console.log('Raw request data:', testData);
+                
+                const response = await fetch(CONFIG.API_BASE_URL + '/neraca-harian', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const responseText = await response.text();
+                let responseData;
+                
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = responseText;
+                }
+                
+                const output = `
+Raw Request Test Results:
+=========================
+Request URL: ${CONFIG.API_BASE_URL}/neraca-harian
+Request Method: POST
+Request Headers: Content-Type: application/json, Accept: application/json
+Request Body: ${JSON.stringify(testData, null, 2)}
+
+Response Status: ${response.status} ${response.statusText}
+Response Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}
+Response Body: ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
+                `;
+                
+                showResult('rawRequestResult', output, !response.ok, response.ok);
+                
+            } catch (error) {
+                const output = `
+Raw Request Error:
+==================
+Error: ${error.message}
+Stack: ${error.stack}
+                `;
+                showResult('rawRequestResult', output, true);
+            }
+        }
+
+        // Auto-run connection test on page load
+        window.addEventListener('load', function() {
+            testConnection();
+        });
+    </script>
+</body>
+</html>

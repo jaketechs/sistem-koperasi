@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Port Discovery</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .log { background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API Port Discovery</h1>
+    <p>Mencari backend API yang berjalan...</p>
+    
+    <button onclick="startDiscovery()">🚀 Start Discovery</button>
+    <button onclick="clearLog()">🗑️ Clear</button>
+    
+    <div id="results"></div>
+    <div id="log" class="log"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function addResult(title, data, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${title}</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testPort(port) {
+            const endpoints = ['/health', '/api/health', '/', '/api', '/api/database'];
+            
+            for (let endpoint of endpoints) {
+                try {
+                    const url = `http://localhost:${port}${endpoint}`;
+                    log(`Testing: ${url}`, 'info');
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const contentType = response.headers.get('content-type');
+                        
+                        if (contentType && contentType.includes('application/json')) {
+                            const data = await response.json();
+                            log(`✅ JSON API found at ${url}`, 'success');
+                            
+                            // Check if this is our koperasi API
+                            if (data && (data.endpoints || data.message?.includes('Koperasi') || data.success)) {
+                                addResult(`🎯 FOUND KOPERASI API - Port ${port}`, {
+                                    url: url,
+                                    status: response.status,
+                                    endpoint: endpoint,
+                                    response: data
+                                }, 'success');
+                                return { port, url, data, success: true };
+                            } else {
+                                addResult(`📋 JSON API (not koperasi) - Port ${port}`, {
+                                    url: url,
+                                    response: data
+                                }, 'info');
+                            }
+                        } else {
+                            log(`📄 HTML/Text response at ${url}`, 'info');
+                        }
+                    }
+                } catch (error) {
+                    log(`❌ ${url}: ${error.message}`, 'error');
+                }
+            }
+            return { port, success: false };
+        }
+
+        async function startDiscovery() {
+            log('🚀 Starting port discovery...', 'info');
+            clearLog();
+            
+            const ports = [3000, 3001, 4000, 5000, 8000, 8080, 8443, 9000];
+            
+            for (let port of ports) {
+                log(`🔍 Testing port ${port}...`, 'info');
+                const result = await testPort(port);
+                
+                if (result.success) {
+                    log(`🎯 FOUND WORKING API at port ${port}!`, 'success');
+                    break;
+                }
+            }
+            
+            log('🏁 Discovery complete', 'info');
+        }
+
+        // Auto start on load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 API Port Discovery ready', 'success');
+            log('Click "Start Discovery" to find the backend API', 'info');
+        });
+    </script>
+</body>
+</html>

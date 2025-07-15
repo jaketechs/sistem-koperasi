@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Neraca Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 150px; }
+        input { padding: 5px; margin: 5px; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        #output { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Neraca Form</h1>
+    
+    <form id="testForm">
+        <div class="form-group">
+            <label for="tanggal">Tanggal:</label>
+            <input type="date" id="tanggal" required>
+        </div>
+        <div class="form-group">
+            <label for="kas_masuk">Kas Masuk:</label>
+            <input type="number" id="kas_masuk" step="0.01" value="100000">
+        </div>
+        <div class="form-group">
+            <label for="piutang_pokok">Piutang Pokok:</label>
+            <input type="number" id="piutang_pokok" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+            <label for="keterangan_lain">Keterangan:</label>
+            <input type="text" id="keterangan_lain" value="Test from form">
+        </div>
+        <button type="submit">Test Submit</button>
+        <button type="button" onclick="clearOutput()">Clear Log</button>
+    </form>
+    
+    <div id="output"></div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+
+        // Set default date to tomorrow to avoid conflicts
+        document.getElementById('tanggal').value = new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0];
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                tanggal: document.getElementById('tanggal').value,
+                kasMasuk: parseFloat(document.getElementById('kas_masuk').value) || 0,
+                piutangPokok: parseFloat(document.getElementById('piutang_pokok').value) || 0,
+                piutangJasa: 0,
+                danaisPokok: 0,
+                danaisJasa: 0,
+                simpananPokok: 0,
+                simpananWajib: 0,
+                simpananSukarela: 0,
+                keteranganLain: document.getElementById('keterangan_lain').value || ''
+            };
+
+            log('🔄 Testing form submission...');
+            log(`📋 Form data: ${JSON.stringify(formData, null, 2)}`);
+
+            try {
+                const result = await apiService.createNeraca(formData);
+                log(`✅ SUCCESS: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`);
+                log(`🔍 Error details: ${error.stack}`);
+            }
+        });
+
+        window.addEventListener('load', () => {
+            log('🚀 Test form loaded');
+        });
+    </script>
+</body>
+</html>

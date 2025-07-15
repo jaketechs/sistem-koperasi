@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Connection</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        button:hover { background: #0056b3; }
+        #output { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 4px; 
+            margin-top: 20px; 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        .status { 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0; 
+            font-weight: bold; 
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Koneksi Database Koperasi</h1>
+        
+        <div class="controls">
+            <button onclick="testHealth()">🩺 Test Health</button>
+            <button onclick="testAnggota()">👥 Test Anggota</button>
+            <button onclick="testKas()">💰 Test Kas</button>
+            <button onclick="testNeraca()">📊 Test Neraca</button>
+            <button onclick="testAll()">🔄 Test All</button>
+            <button onclick="clearOutput()">🗑️ Clear</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="output"></div>
+    </div>
+
+    <!-- Load scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+        }
+
+        async function testHealth() {
+            log('🩺 Testing backend health...', 'info');
+            try {
+                const result = await apiService.healthCheck();
+                if (result) {
+                    log('✅ Backend health: OK', 'success');
+                } else {
+                    log('❌ Backend health: FAILED', 'error');
+                }
+            } catch (error) {
+                log(`❌ Health check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAnggota() {
+            log('👥 Testing anggota endpoint...', 'info');
+            try {
+                const response = await apiService.getAllAnggota();
+                log(`✅ Anggota response: ${JSON.stringify(response, null, 2)}`, 'success');
+                
+                if (response.data && response.data.length > 0) {
+                    log(`📊 Found ${response.data.length} anggota records`, 'success');
+                    response.data.forEach((item, index) => {
+                        log(`   ${index + 1}. ${item.nama} (${item.no_anggota})`);
+                    });
+                } else {
+                    log('⚠️ No anggota data found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Anggota test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testKas() {
+            log('💰 Testing kas endpoint...', 'info');
+            try {
+                const response = await apiService.getAllKas();
+                log(`✅ Kas response: ${JSON.stringify(response, null, 2)}`, 'success');
+                
+                if (response.data && response.data.length > 0) {
+                    log(`📊 Found ${response.data.length} kas records`, 'success');
+                    response.data.forEach((item, index) => {
+                        log(`   ${index + 1}. ${item.jenis} - Rp${item.jumlah} (${item.keterangan})`);
+                    });
+                } else {
+                    log('⚠️ No kas data found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Kas test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testNeraca() {
+            log('📊 Testing neraca endpoint...', 'info');
+            try {
+                const response = await apiService.getAllNeraca();
+                log(`✅ Neraca response: ${JSON.stringify(response, null, 2)}`, 'success');
+                
+                if (response.data && response.data.length > 0) {
+                    log(`📊 Found ${response.data.length} neraca records`, 'success');
+                    response.data.forEach((item, index) => {
+                        log(`   ${index + 1}. ${item.tanggal} - Kas: Rp${item.kas_masuk}`);
+                    });
+                } else {
+                    log('⚠️ No neraca data found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Neraca test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAll() {
+            log('🔄 Running all tests...', 'info');
+            await testHealth();
+            await testAnggota();
+            await testKas();
+            await testNeraca();
+            log('🏁 All tests completed', 'success');
+        }
+
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        // Auto-run health check on load
+        window.addEventListener('load', () => {
+            log('🚀 Debug page loaded', 'info');
+            testHealth();
+        });
+    </script>
+</body>
+</html>

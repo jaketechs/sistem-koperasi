@@ -1,47 +1,46 @@
 // Configuration for Koperasi Frontend
 const CONFIG = {
-    // Backend API Configuration - SESUAI DENGAN DOKUMENTASI API
-    API_BASE_URL: 'http://localhost:3000/api',
+    // Backend API Configuration - Backend running at port 3000
+    API_BASE_URL: 'http://localhost:3000',
     
-    // Alternative API URLs to try (in case main URL fails)
+    // Alternative API URLs to try (in case main URL fails) - Only 3000 and 3001
     ALTERNATIVE_API_URLS: [
-        'http://localhost:3000',
-        'http://localhost:3000/koperasi',
-        'http://localhost:3000/v1',
-        'http://127.0.0.1:3000/api',
-        'http://127.0.0.1:3000'
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001'
     ],
     
-    // Endpoint mapping - DISESUAIKAN DENGAN BACKEND YANG ADA
+    // Endpoint mapping - SESUAI DENGAN API RESPONSE YANG SEBENARNYA
     ENDPOINTS: {
         // Health & System
         HEALTH: '/health',                    // GET /health
-        DB_TEST: '/db-test',                 // GET /db-test
-        LIST_TABLES: '/list-tables',         // GET /list-tables
-        CREATE_TABLES: '/create-tables',     // POST /create-tables
-        CHECK_TABLES: '/check-tables',       // GET /check-tables
+        DB_TEST: '/api/database',            // GET /api/database
         
         // Anggota
-        ANGGOTA: '/anggota',                 // GET, POST /api/anggota
-        ANGGOTA_BY_ID: '/anggota/:id',       // GET, PUT /api/anggota/:id
-        ANGGOTA_SEARCH: '/anggota/search/:name', // GET /api/anggota/search/:name
-        ANGGOTA_ACTIVE: '/anggota/active',   // GET /api/anggota/active
-        ANGGOTA_STATS: '/anggota/stats',     // GET /api/anggota/stats
+        ANGGOTA: '/api/anggota',             // GET, POST /api/anggota
+        ANGGOTA_BY_ID: '/api/anggota/:id',   // GET, PUT /api/anggota/:id
         
-        // Kas (bukan 'kas' tapi 'transaksi-kas')
-        KAS: '/transaksi-kas',               // GET, POST /api/transaksi-kas
-        KAS_SUMMARY: '/transaksi-kas/summary/daily/:date',  // GET /api/transaksi-kas/summary/daily/:date
-        KAS_SALDO: '/transaksi-kas/saldo/:date',            // GET /api/transaksi-kas/saldo/:date
+        // Kas (transaksi-kas)
+        KAS: '/api/transaksi-kas',           // GET, POST /api/transaksi-kas
+        KAS_BY_ID: '/api/transaksi-kas/:id', // GET, PUT, DELETE /api/transaksi-kas/:id
+        KAS_TOP_CONTRIBUTORS: '/api/transaksi-kas/top-contributors', // GET /api/transaksi-kas/top-contributors
         
-        // Neraca (bukan 'neraca' tapi 'neraca-harian')
-        NERACA: '/neraca-harian',            // GET, POST /api/neraca-harian
-        NERACA_BY_DATE: '/neraca-harian/date/:date', // GET /api/neraca-harian/date/:date
+        // Neraca (neraca-harian)
+        NERACA: '/api/neraca-harian',        // GET, POST /api/neraca-harian
+        NERACA_BY_ID: '/api/neraca-harian/:id', // GET, PUT, DELETE /api/neraca-harian/:id
         
         // Simpanan
-        RIWAYAT_SIMPANAN: '/riwayat-simpanan',               // GET, POST /api/riwayat-simpanan
-        SIMPANAN_BY_ANGGOTA: '/riwayat-simpanan/anggota/:id', // GET /api/riwayat-simpanan/anggota/:id
-        SIMPANAN_TOTAL: '/riwayat-simpanan/total/:id',        // GET /api/riwayat-simpanan/total/:id
-        SIMPANAN_REPORT: '/riwayat-simpanan/report/anggota'   // GET /api/riwayat-simpanan/report/anggota
+        RIWAYAT_SIMPANAN: '/api/riwayat-simpanan',               // GET, POST /api/riwayat-simpanan
+        SIMPANAN_BY_ID: '/api/riwayat-simpanan/:id',             // GET, PUT, DELETE /api/riwayat-simpanan/:id
+        
+        // Dashboard
+        DASHBOARD: '/api/dashboard',                             // GET /api/dashboard
+        DASHBOARD_OVERVIEW: '/api/dashboard/overview',           // GET /api/dashboard/overview
+        
+        // Laporan (Reporting)
+        LAPORAN_BULANAN: '/api/laporan/bulanan',                 // GET /api/laporan/bulanan?bulan=1&tahun=2024
+        LAPORAN_3BULAN: '/api/laporan/triwulan',                 // GET /api/laporan/triwulan?tahun=2024
+        LAPORAN_TAHUNAN: '/api/laporan/tahunan'                  // GET /api/laporan/tahunan?tahun=2024
     },
     
     // Connection Settings

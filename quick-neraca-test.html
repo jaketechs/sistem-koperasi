@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Neraca Test - Koperasi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d1e7dd; border-color: #badbcc; color: #0f5132; }
+        .error { background-color: #f8d7da; border-color: #f5c2c7; color: #842029; }
+        .warning { background-color: #fff3cd; border-color: #ffecb5; color: #664d03; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Quick Neraca Save Test</h1>
+        
+        <div class="alert alert-info">
+            <strong>Test Neraca Save Fix</strong><br>
+            Test ini akan mencoba menyimpan data neraca dan menunjukkan proses fallback ke offline mode jika server tidak tersedia.
+        </div>
+
+        <!-- Quick Test Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Test Simpan Neraca</h3>
+            </div>
+            <div class="card-body">
+                <form id="quickTestForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="testTanggal" class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="testTanggal" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="testKasMasuk" class="form-label">Kas Masuk</label>
+                                <input type="number" class="form-control" id="testKasMasuk" value="500000">
+                            </div>
+                            <div class="mb-3">
+                                <label for="testSimpananPokok" class="form-label">Simpanan Pokok</label>
+                                <input type="number" class="form-control" id="testSimpananPokok" value="100000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="testKeterangan" class="form-label">Keterangan</label>
+                                <input type="text" class="form-control" id="testKeterangan" value="Test save neraca dengan error handling">
+                            </div>
+                            <div class="mb-3">
+                                <label for="testAnggota" class="form-label">Anggota (Optional)</label>
+                                <select class="form-control" id="testAnggota">
+                                    <option value="">Pilih Anggota (Opsional)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="testOfflineMode">
+                                    <label class="form-check-label" for="testOfflineMode">
+                                        Force Offline Mode (Skip API)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="testSaveNeraca()">Test Save Neraca</button>
+                    <button type="button" class="btn btn-info" onclick="testConnectionFirst()">Test Connection First</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearResults()">Clear Results</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="testResults" class="test-output" style="display: none;"></div>
+        
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="test-output" style="display: none;"></div>
+
+        <!-- Saved Data Display -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>Data Neraca Tersimpan (LocalStorage)</h3>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadSavedData()">Refresh</button>
+            </div>
+            <div class="card-body">
+                <div id="savedDataDisplay" class="test-output">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="demo-data.js"></script>
+    <script>
+        let testApp;
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('testTanggal').value = today;
+
+        function showResult(elementId, content, type = '') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `test-output ${type}`;
+            element.textContent = content;
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').style.display = 'none';
+            document.getElementById('connectionStatus').style.display = 'none';
+        }
+
+        async function initTestApp() {
+            if (!testApp) {
+                // Load demo data first
+                if (typeof loadDemoData === 'function') {
+                    loadDemoData();
+                }
+                
+                testApp = new KoperasiApp();
+                
+                // Populate anggota dropdown
+                if (testApp.populateAnggotaDropdown) {
+                    testApp.populateAnggotaDropdown('testAnggota');
+                }
+                
+                console.log('Test app initialized with data:', {
+                    anggota: testApp.anggotaData?.length || 0,
+                    neraca: testApp.neracaData?.length || 0
+                });
+            }
+            return testApp;
+        }
+
+        async function testConnectionFirst() {
+            showResult('connectionStatus', 'Testing connection...', '');
+            
+            try {
+                const apiService = new ApiService();
+                const isConnected = await apiService.healthCheck();
+                
+                if (isConnected) {
+                    showResult('connectionStatus', 
+                        `✅ Connection successful!\nBackend is accessible at: ${apiService.baseURL}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('connectionStatus', 
+                        `❌ Connection failed!\nBackend not accessible at: ${apiService.baseURL}\n\nData will be saved offline.`, 
+                        'warning'
+                    );
+                }
+            } catch (error) {
+                showResult('connectionStatus', 
+                    `❌ Connection error: ${error.message}\n\nData will be saved offline.`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testSaveNeraca() {
+            try {
+                showResult('testResults', 'Initializing test...', '');
+                
+                // Initialize test app
+                const app = await initTestApp();
+                
+                // Get form data
+                const testData = {
+                    tanggal: document.getElementById('testTanggal').value,
+                    kasMasuk: parseFloat(document.getElementById('testKasMasuk').value) || 0,
+                    simpananPokok: parseFloat(document.getElementById('testSimpananPokok').value) || 0,
+                    keteranganLain: document.getElementById('testKeterangan').value || '',
+                    anggotaId: document.getElementById('testAnggota').value || null
+                };
+                
+                // Calculate total
+                testData.total = testData.kasMasuk + testData.simpananPokok;
+                
+                // Add anggota name if selected
+                if (testData.anggotaId && app.getAnggotaNameById) {
+                    testData.namaAnggota = app.getAnggotaNameById(testData.anggotaId);
+                }
+                
+                // Force offline mode if checkbox is checked
+                const forceOffline = document.getElementById('testOfflineMode').checked;
+                if (forceOffline) {
+                    app.isOnline = false;
+                }
+                
+                showResult('testResults', 
+                    `Starting save test...\n\nData to save:\n${JSON.stringify(testData, null, 2)}\n\nForce Offline: ${forceOffline}\nApp Online Status: ${app.isOnline}`,
+                    ''
+                );
+                
+                // Create a mock event
+                const mockEvent = {
+                    preventDefault: () => {}
+                };
+                
+                // Test the actual submitNeraca function
+                await app.submitNeraca(mockEvent);
+                
+                showResult('testResults', 
+                    `✅ Save test completed successfully!\n\nCheck the "Data Neraca Tersimpan" section below to see the saved data.\n\nData was saved ${app.isOnline && !forceOffline ? 'online' : 'offline'}.`,
+                    'success'
+                );
+                
+                // Refresh saved data display
+                loadSavedData();
+                
+            } catch (error) {
+                showResult('testResults', 
+                    `❌ Save test failed:\n\n${error.message}\n\nStack trace:\n${error.stack}`,
+                    'error'
+                );
+            }
+        }
+
+        function loadSavedData() {
+            try {
+                const savedNeraca = JSON.parse(localStorage.getItem('neracaData') || '[]');
+                
+                let display = `Total Records: ${savedNeraca.length}\n\n`;
+                
+                if (savedNeraca.length === 0) {
+                    display += 'No data saved yet.';
+                } else {
+                    savedNeraca.forEach((item, index) => {
+                        display += `Record ${index + 1}:\n`;
+                        display += `  ID: ${item.id}\n`;
+                        display += `  Tanggal: ${item.tanggal}\n`;
+                        display += `  Kas Masuk: ${item.kasMasuk || 0}\n`;
+                        display += `  Total: ${item.total || 0}\n`;
+                        display += `  Keterangan: ${item.keteranganLain || ''}\n`;
+                        display += `  Anggota: ${item.namaAnggota || 'None'}\n`;
+                        display += `  Sync Status: ${item.syncStatus || 'unknown'}\n`;
+                        display += `  Created: ${item.created_at || 'unknown'}\n`;
+                        display += '\n';
+                    });
+                }
+                
+                document.getElementById('savedDataDisplay').textContent = display;
+                
+            } catch (error) {
+                document.getElementById('savedDataDisplay').textContent = `Error loading saved data: ${error.message}`;
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing...');
+            initTestApp();
+            loadSavedData();
+            testConnectionFirst();
+        });
+    </script>
+</body>
+</html>

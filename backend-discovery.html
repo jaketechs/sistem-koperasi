@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Endpoint Discovery - Koperasi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d1e7dd; border-color: #badbcc; color: #0f5132; }
+        .error { background-color: #f8d7da; border-color: #f5c2c7; color: #842029; }
+        .warning { background-color: #fff3cd; border-color: #ffecb5; color: #664d03; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Backend Endpoint Discovery</h1>
+        
+        <div class="alert alert-info">
+            <strong>Tujuan:</strong> Mencari endpoint yang benar-benar tersedia di backend untuk operasi neraca.
+        </div>
+
+        <!-- Base URL Configuration -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>1. Base URL Configuration</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" id="baseUrl" class="form-control" value="http://localhost:3000" placeholder="Backend Base URL">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary" onclick="updateBaseUrl()">Update Base URL</button>
+                    </div>
+                </div>
+                <small class="text-muted">Default: http://localhost:3000 (ubah jika backend menggunakan port lain)</small>
+            </div>
+        </div>
+
+        <!-- Server Discovery -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>2. Server Discovery</h3>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-info" onclick="discoverServer()">Discover Server</button>
+                <button class="btn btn-secondary" onclick="testBasicConnection()">Test Basic Connection</button>
+            </div>
+            <div id="serverDiscoveryResult" class="test-output" style="display: none;"></div>
+        </div>
+
+        <!-- Endpoint Discovery -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>3. Endpoint Discovery</h3>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-success" onclick="discoverEndpoints()">Discover All Endpoints</button>
+                <button class="btn btn-warning" onclick="testSpecificEndpoints()">Test Neraca Endpoints</button>
+            </div>
+            <div id="endpointDiscoveryResult" class="test-output" style="display: none;"></div>
+        </div>
+
+        <!-- Manual Endpoint Test -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>4. Manual Endpoint Test</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" id="customEndpoint" class="form-control" placeholder="/api/neraca" value="/api/neraca">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="httpMethod" class="form-control">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary" onclick="testCustomEndpoint()">Test Endpoint</button>
+                    </div>
+                </div>
+            </div>
+            <div id="customEndpointResult" class="test-output" style="display: none;"></div>
+        </div>
+
+        <!-- Raw API Test -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>5. Test POST Neraca</h3>
+            </div>
+            <div class="card-body">
+                <p>Test actual POST request with sample neraca data:</p>
+                <button class="btn btn-danger" onclick="testPostNeraca()">Test POST Neraca</button>
+            </div>
+            <div id="postNeracaResult" class="test-output" style="display: none;"></div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="card">
+            <div class="card-header">
+                <h3>6. Results Summary</h3>
+                <button class="btn btn-sm btn-outline-primary" onclick="generateApiConfig()">Generate API Config</button>
+            </div>
+            <div class="card-body">
+                <div id="resultsSummary" class="test-output">
+                    No tests run yet. Click buttons above to discover backend endpoints.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBaseUrl = 'http://localhost:3000';
+        let workingEndpoints = [];
+
+        function showResult(elementId, content, type = '') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `test-output ${type}`;
+            element.textContent = content;
+        }
+
+        function updateBaseUrl() {
+            currentBaseUrl = document.getElementById('baseUrl').value.trim();
+            if (!currentBaseUrl.startsWith('http')) {
+                currentBaseUrl = 'http://' + currentBaseUrl;
+            }
+            // Remove trailing slash
+            currentBaseUrl = currentBaseUrl.replace(/\/$/, '');
+            
+            document.getElementById('baseUrl').value = currentBaseUrl;
+            showResult('resultsSummary', `Base URL updated to: ${currentBaseUrl}`, 'success');
+        }
+
+        async function testBasicConnection() {
+            showResult('serverDiscoveryResult', 'Testing basic connection...', '');
+            
+            try {
+                const response = await fetch(currentBaseUrl, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                const result = `
+Basic Connection Test:
+=====================
+URL: ${currentBaseUrl}
+Status: ${response.status} ${response.statusText}
+Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}
+
+Response accessible: ${response.ok ? 'YES' : 'NO'}
+                `;
+                
+                showResult('serverDiscoveryResult', result, response.ok ? 'success' : 'warning');
+                
+            } catch (error) {
+                showResult('serverDiscoveryResult', 
+                    `Basic Connection Failed:\n${error.message}\n\nTips:\n1. Pastikan backend server running\n2. Check CORS settings\n3. Verify port number`, 
+                    'error'
+                );
+            }
+        }
+
+        async function discoverServer() {
+            showResult('serverDiscoveryResult', 'Discovering server endpoints...', '');
+            
+            const possiblePaths = [
+                '',           // Root
+                '/api',       // API path
+                '/health',    // Health check
+                '/status',    // Status
+                '/ping',      // Ping
+                '/v1',        // Version 1
+                '/koperasi'   // App specific
+            ];
+            
+            let results = 'Server Discovery Results:\n========================\n\n';
+            let foundPaths = [];
+            
+            for (const path of possiblePaths) {
+                try {
+                    const url = currentBaseUrl + path;
+                    const response = await fetch(url, { 
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    
+                    if (response.ok) {
+                        foundPaths.push(path || '/');
+                        results += `✅ ${url} - Status: ${response.status}\n`;
+                        
+                        try {
+                            const data = await response.json();
+                            results += `   Response: ${JSON.stringify(data).substring(0, 100)}...\n`;
+                        } catch (e) {
+                            results += `   Response: Non-JSON content\n`;
+                        }
+                    } else {
+                        results += `❌ ${url} - Status: ${response.status}\n`;
+                    }
+                } catch (error) {
+                    results += `❌ ${currentBaseUrl + path} - Error: ${error.message}\n`;
+                }
+                results += '\n';
+            }
+            
+            results += `\nFound ${foundPaths.length} accessible paths: ${foundPaths.join(', ')}`;
+            
+            showResult('serverDiscoveryResult', results, foundPaths.length > 0 ? 'success' : 'error');
+        }
+
+        async function discoverEndpoints() {
+            showResult('endpointDiscoveryResult', 'Discovering all endpoints...', '');
+            
+            const basePaths = ['', '/api', '/v1', '/koperasi'];
+            const endpoints = [
+                'neraca', 'neraca-harian', 'neraca-data',
+                'kas', 'transaksi-kas', 'kas-data',
+                'anggota', 'members', 'users',
+                'dashboard', 'summary', 'report'
+            ];
+            
+            let results = 'Endpoint Discovery Results:\n===========================\n\n';
+            workingEndpoints = [];
+            
+            for (const basePath of basePaths) {
+                results += `Testing base path: ${basePath || '/'}\n`;
+                results += '─'.repeat(40) + '\n';
+                
+                for (const endpoint of endpoints) {
+                    const fullPath = basePath + '/' + endpoint;
+                    const url = currentBaseUrl + fullPath;
+                    
+                    try {
+                        const response = await fetch(url, { 
+                            method: 'GET',
+                            mode: 'cors',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        
+                        if (response.ok) {
+                            workingEndpoints.push(fullPath);
+                            results += `✅ ${fullPath} - Status: ${response.status}\n`;
+                        } else if (response.status === 404) {
+                            results += `❌ ${fullPath} - 404 Not Found\n`;
+                        } else {
+                            results += `⚠️ ${fullPath} - Status: ${response.status}\n`;
+                        }
+                    } catch (error) {
+                        results += `❌ ${fullPath} - Error: ${error.message.substring(0, 50)}\n`;
+                    }
+                }
+                results += '\n';
+            }
+            
+            results += `\nWorking Endpoints Found: ${workingEndpoints.length}\n`;
+            results += workingEndpoints.map(ep => `✅ ${ep}`).join('\n');
+            
+            showResult('endpointDiscoveryResult', results, workingEndpoints.length > 0 ? 'success' : 'error');
+        }
+
+        async function testSpecificEndpoints() {
+            showResult('endpointDiscoveryResult', 'Testing specific neraca endpoints...', '');
+            
+            const neracaEndpoints = [
+                '/neraca',
+                '/api/neraca', 
+                '/neraca-harian',
+                '/api/neraca-harian',
+                '/v1/neraca',
+                '/koperasi/neraca',
+                '/neraca-data',
+                '/balance',
+                '/accounting/neraca'
+            ];
+            
+            let results = 'Neraca Endpoint Test Results:\n==============================\n\n';
+            let workingNeracaEndpoints = [];
+            
+            for (const endpoint of neracaEndpoints) {
+                const url = currentBaseUrl + endpoint;
+                
+                try {
+                    // Test GET first
+                    const getResponse = await fetch(url, { 
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    
+                    if (getResponse.ok) {
+                        workingNeracaEndpoints.push(endpoint);
+                        results += `✅ GET ${endpoint} - Status: ${getResponse.status}\n`;
+                        
+                        // Test POST if GET works
+                        try {
+                            const postResponse = await fetch(url, { 
+                                method: 'POST',
+                                mode: 'cors',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json' 
+                                },
+                                body: JSON.stringify({
+                                    tanggal: '2025-01-11',
+                                    kas_masuk: 100000
+                                })
+                            });
+                            
+                            if (postResponse.ok) {
+                                results += `✅ POST ${endpoint} - Status: ${postResponse.status} (WORKING!)\n`;
+                            } else {
+                                results += `⚠️ POST ${endpoint} - Status: ${postResponse.status}\n`;
+                            }
+                        } catch (postError) {
+                            results += `❌ POST ${endpoint} - Error: ${postError.message}\n`;
+                        }
+                        
+                    } else if (getResponse.status === 404) {
+                        results += `❌ ${endpoint} - 404 Not Found\n`;
+                    } else {
+                        results += `⚠️ ${endpoint} - Status: ${getResponse.status}\n`;
+                    }
+                    
+                } catch (error) {
+                    results += `❌ ${endpoint} - Error: ${error.message}\n`;
+                }
+            }
+            
+            results += `\nWorking Neraca Endpoints: ${workingNeracaEndpoints.length}\n`;
+            if (workingNeracaEndpoints.length > 0) {
+                results += workingNeracaEndpoints.map(ep => `✅ ${ep}`).join('\n');
+            } else {
+                results += '\n❌ No working neraca endpoints found!\n';
+                results += '\nTroubleshooting:\n';
+                results += '1. Check if backend has neraca routes defined\n';
+                results += '2. Verify API documentation\n';
+                results += '3. Check backend logs for route registration\n';
+            }
+            
+            showResult('endpointDiscoveryResult', results, workingNeracaEndpoints.length > 0 ? 'success' : 'error');
+        }
+
+        async function testCustomEndpoint() {
+            const endpoint = document.getElementById('customEndpoint').value;
+            const method = document.getElementById('httpMethod').value;
+            
+            showResult('customEndpointResult', `Testing ${method} ${endpoint}...`, '');
+            
+            try {
+                const url = currentBaseUrl + endpoint;
+                const options = {
+                    method: method,
+                    mode: 'cors',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (method === 'POST') {
+                    options.body = JSON.stringify({
+                        tanggal: '2025-01-11',
+                        kas_masuk: 100000,
+                        keterangan_lain: 'Test endpoint'
+                    });
+                }
+                
+                const response = await fetch(url, options);
+                
+                let responseText = '';
+                try {
+                    const data = await response.json();
+                    responseText = JSON.stringify(data, null, 2);
+                } catch (e) {
+                    responseText = await response.text();
+                }
+                
+                const result = `
+Custom Endpoint Test:
+====================
+URL: ${url}
+Method: ${method}
+Status: ${response.status} ${response.statusText}
+Headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}
+
+Response:
+${responseText}
+                `;
+                
+                showResult('customEndpointResult', result, response.ok ? 'success' : 'error');
+                
+            } catch (error) {
+                showResult('customEndpointResult', 
+                    `Custom Endpoint Test Failed:\n${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testPostNeraca() {
+            showResult('postNeracaResult', 'Testing POST neraca with sample data...', '');
+            
+            const testData = {
+                tanggal: '2025-01-11',
+                kas_masuk: 500000,
+                piutang_pokok: 200000,
+                simpanan_pokok: 100000,
+                keterangan_lain: 'Test data from endpoint discovery'
+            };
+            
+            const endpointsToTest = [
+                '/api/neraca',
+                '/neraca', 
+                '/api/neraca-harian',
+                '/neraca-harian',
+                '/v1/neraca'
+            ];
+            
+            let results = 'POST Neraca Test Results:\n=========================\n\n';
+            results += `Test Data: ${JSON.stringify(testData, null, 2)}\n\n`;
+            
+            for (const endpoint of endpointsToTest) {
+                const url = currentBaseUrl + endpoint;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(testData)
+                    });
+                    
+                    let responseData = '';
+                    try {
+                        const data = await response.json();
+                        responseData = JSON.stringify(data, null, 2);
+                    } catch (e) {
+                        responseData = await response.text();
+                    }
+                    
+                    if (response.ok) {
+                        results += `✅ SUCCESS: ${endpoint}\n`;
+                        results += `   Status: ${response.status}\n`;
+                        results += `   Response: ${responseData.substring(0, 200)}\n\n`;
+                    } else {
+                        results += `❌ FAILED: ${endpoint}\n`;
+                        results += `   Status: ${response.status} ${response.statusText}\n`;
+                        results += `   Error: ${responseData.substring(0, 200)}\n\n`;
+                    }
+                    
+                } catch (error) {
+                    results += `❌ ERROR: ${endpoint}\n`;
+                    results += `   Error: ${error.message}\n\n`;
+                }
+            }
+            
+            showResult('postNeracaResult', results, '');
+        }
+
+        function generateApiConfig() {
+            let config = 'Generated API Configuration:\n=============================\n\n';
+            
+            config += `// Base URL\n`;
+            config += `API_BASE_URL: '${currentBaseUrl}'\n\n`;
+            
+            if (workingEndpoints.length > 0) {
+                config += `// Working Endpoints Found:\n`;
+                workingEndpoints.forEach(endpoint => {
+                    config += `// ${currentBaseUrl}${endpoint}\n`;
+                });
+                config += '\n';
+                
+                config += `// Recommended API Service Configuration:\n`;
+                config += `const CONFIG = {\n`;
+                config += `    API_BASE_URL: '${currentBaseUrl}',\n`;
+                config += `    ENDPOINTS: {\n`;
+                
+                workingEndpoints.forEach(endpoint => {
+                    const name = endpoint.split('/').pop().toUpperCase().replace('-', '_');
+                    config += `        ${name}: '${endpoint}',\n`;
+                });
+                
+                config += `    }\n`;
+                config += `};\n`;
+            } else {
+                config += '// No working endpoints found.\n';
+                config += '// Backend may not be running or may need different configuration.\n';
+            }
+            
+            showResult('resultsSummary', config, workingEndpoints.length > 0 ? 'success' : 'warning');
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', function() {
+            testBasicConnection();
+        });
+    </script>
+</body>
+</html>

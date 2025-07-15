@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Neraca - Koperasi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Debug Form Neraca</h2>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Test Manual Form Neraca</h5>
+            </div>
+            <div class="card-body">
+                <form id="testNeracaForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal</label>
+                            <input type="date" class="form-control" id="tanggalNeraca" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Anggota (Test)</label>
+                            <select class="form-control" id="anggotaNeraca">
+                                <option value="">Pilih Anggota (Opsional)</option>
+                                <option value="1719504300000">KPP2025001 - Budi Santoso</option>
+                                <option value="1719504400000">KPP2025002 - Siti Aminah</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Kas Masuk</label>
+                            <input type="number" class="form-control" id="kasMasuk" value="1000000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Piutang Pokok</label>
+                            <input type="number" class="form-control" id="piutangPokok" value="500000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Piutang Jasa</label>
+                            <input type="number" class="form-control" id="piutangJasa" value="50000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Danais Pokok</label>
+                            <input type="number" class="form-control" id="danaisPokok" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Danais Jasa</label>
+                            <input type="number" class="form-control" id="danaisJasa" value="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Simpanan Pokok</label>
+                            <input type="number" class="form-control" id="simpananPokok" value="200000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Simpanan Wajib</label>
+                            <input type="number" class="form-control" id="simpananWajib" value="100000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Simpanan Sukarela</label>
+                            <input type="number" class="form-control" id="simpananSukarela" value="300000">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Keterangan Lain</label>
+                            <textarea class="form-control" id="keteranganLain" rows="2">Test input neraca debug</textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Jumlah Lain</label>
+                            <input type="number" class="form-control" id="jumlahLain" value="0">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Test Simpan Neraca</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Debug Log</h5>
+            </div>
+            <div class="card-body">
+                <div id="debugLog" style="background: #f8f9fa; padding: 10px; font-family: monospace; max-height: 300px; overflow-y: auto;">
+                    Console log akan muncul di sini...
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Actions</h5>
+            </div>
+            <div class="card-body">
+                <button onclick="loadDemoData()" class="btn btn-success me-2">Load Demo Data</button>
+                <button onclick="checkLocalStorage()" class="btn btn-info me-2">Check LocalStorage</button>
+                <button onclick="clearLocalStorage()" class="btn btn-warning me-2">Clear LocalStorage</button>
+                <a href="main.html" target="_blank" class="btn btn-secondary">Open Main App</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="demo-data.js"></script>
+    
+    <script>
+        // Set tanggal hari ini
+        document.getElementById('tanggalNeraca').value = new Date().toISOString().split('T')[0];
+        
+        // Override console.log untuk menampilkan di halaman
+        const originalLog = console.log;
+        const originalError = console.error;
+        const debugLog = document.getElementById('debugLog');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : (type === 'success' ? 'green' : 'black');
+            debugLog.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        // Mock app object untuk testing
+        const mockApp = {
+            neracaData: JSON.parse(localStorage.getItem('neracaData')) || [],
+            anggotaData: JSON.parse(localStorage.getItem('anggotaData')) || demoData.anggota,
+            isOnline: false,
+            
+            getAnggotaNameById(anggotaId) {
+                if (!anggotaId) return '';
+                const anggota = this.anggotaData.find(a => a.id == anggotaId);
+                return anggota ? anggota.nama : '';
+            },
+            
+            showAlert(type, message) {
+                const color = type === 'success' ? 'green' : (type === 'warning' ? 'orange' : 'red');
+                addToLog(`ALERT [${type.toUpperCase()}]: ${message}`, type === 'success' ? 'success' : 'error');
+                alert(`[${type.toUpperCase()}] ${message}`);
+            },
+            
+            async submitNeraca(e) {
+                e.preventDefault();
+                
+                try {
+                    const tanggal = document.getElementById('tanggalNeraca').value;
+                    const anggotaId = document.getElementById('anggotaNeraca')?.value || '';
+                    
+                    console.log('Submit neraca - tanggal:', tanggal, 'anggotaId:', anggotaId);
+                    
+                    if (!tanggal) {
+                        this.showAlert('warning', 'Tanggal harus diisi');
+                        return;
+                    }
+                    
+                    const data = {
+                        tanggal: tanggal,
+                        kasMasuk: parseFloat(document.getElementById('kasMasuk')?.value || 0) || 0,
+                        piutangPokok: parseFloat(document.getElementById('piutangPokok')?.value || 0) || 0,
+                        piutangJasa: parseFloat(document.getElementById('piutangJasa')?.value || 0) || 0,
+                        danaisPokok: parseFloat(document.getElementById('danaisPokok')?.value || 0) || 0,
+                        danaisJasa: parseFloat(document.getElementById('danaisJasa')?.value || 0) || 0,
+                        simpananPokok: parseFloat(document.getElementById('simpananPokok')?.value || 0) || 0,
+                        simpananWajib: parseFloat(document.getElementById('simpananWajib')?.value || 0) || 0,
+                        simpananSukarela: parseFloat(document.getElementById('simpananSukarela')?.value || 0) || 0,
+                        keteranganLain: document.getElementById('keteranganLain')?.value || '',
+                        jumlahLain: parseFloat(document.getElementById('jumlahLain')?.value || 0) || 0,
+                        anggotaId: anggotaId || null,
+                        namaAnggota: anggotaId ? this.getAnggotaNameById(anggotaId) : ''
+                    };
+                    
+                    data.total = data.kasMasuk + data.piutangPokok + data.piutangJasa + 
+                                data.danaisPokok + data.danaisJasa + data.simpananPokok + 
+                                data.simpananWajib + data.simpananSukarela + data.jumlahLain;
+                    
+                    console.log('Data neraca yang akan disimpan:', data);
+                    
+                    // Validation
+                    if (data.total === 0) {
+                        this.showAlert('warning', 'Minimal satu field harus diisi dengan nilai lebih dari 0');
+                        return;
+                    }
+
+                    if (this.isOnline) {
+                        console.log('Mencoba menyimpan ke server...');
+                        const response = await apiService.createNeraca(data);
+                        console.log('Response dari server:', response);
+                        if (response && (response.success || response.data)) {
+                            const newData = response.data || { ...data, id: Date.now() };
+                            this.neracaData.push(newData);
+                            this.showAlert('success', 'Data neraca berhasil disimpan ke server!');
+                        } else {
+                            throw new Error(response?.message || 'Response tidak valid dari server');
+                        }
+                    } else {
+                        console.log('Menyimpan ke localStorage (mode offline)...');
+                        // Fallback to localStorage
+                        data.id = Date.now();
+                        data.created_at = new Date().toISOString();
+                        this.neracaData.push(data);
+                        localStorage.setItem('neracaData', JSON.stringify(this.neracaData));
+                        this.showAlert('success', 'Data neraca berhasil disimpan (offline)!');
+                    }
+                    
+                    console.log('Neraca berhasil disimpan! Total data neraca:', this.neracaData.length);
+                    
+                } catch (error) {
+                    console.error('Error saving neraca:', error);
+                    this.showAlert('error', `Gagal menyimpan data neraca: ${error.message || 'Error tidak diketahui'}`);
+                }
+            }
+        };
+        
+        // Event listener untuk form
+        document.getElementById('testNeracaForm').addEventListener('submit', (e) => {
+            mockApp.submitNeraca(e);
+        });
+        
+        // Helper functions
+        function checkLocalStorage() {
+            const neraca = JSON.parse(localStorage.getItem('neracaData')) || [];
+            const kas = JSON.parse(localStorage.getItem('kasData')) || [];
+            const anggota = JSON.parse(localStorage.getItem('anggotaData')) || [];
+            
+            console.log('LocalStorage Data:');
+            console.log('- Neraca:', neraca.length, 'items');
+            console.log('- Kas:', kas.length, 'items');
+            console.log('- Anggota:', anggota.length, 'items');
+            
+            if (neraca.length > 0) {
+                console.log('Sample neraca data:', neraca[0]);
+            }
+        }
+        
+        function clearLocalStorage() {
+            if (confirm('Hapus semua data dari localStorage?')) {
+                localStorage.removeItem('neracaData');
+                localStorage.removeItem('kasData');
+                localStorage.removeItem('anggotaData');
+                console.log('LocalStorage cleared');
+            }
+        }
+        
+        console.log('Debug page loaded');
+        console.log('API Service available:', typeof apiService !== 'undefined');
+        console.log('Demo data available:', typeof demoData !== 'undefined');
+    </script>
+</body>
+</html>

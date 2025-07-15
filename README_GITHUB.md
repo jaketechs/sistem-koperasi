@@ -6,6 +6,8 @@
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-563D7C?style=flat&logo=bootstrap&logoColor=white)](https://getbootstrap.com)
 
+🌐 **[Live Demo](https://jaketechs.github.io/sistem-koperasi)**
+
 > Aplikasi web modern untuk manajemen keuangan dan administrasi Koperasi Pasar Padang Pangan. Mendukung mode online/offline dengan integrasi backend API yang fleksibel.
 
 ## 🌟 Fitur Utama

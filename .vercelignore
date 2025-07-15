@@ -1,0 +1,12 @@
+node_modules
+.git
+.github
+*.md
+!README_GITHUB.md
+demo-data.js
+csv-test.html
+api-tester.html
+.gitignore
+frontend-server.js
+simple-server.js
+package-lock.json
